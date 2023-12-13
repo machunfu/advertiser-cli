@@ -5,14 +5,16 @@ const fs = require('fs');
 const path = require('path');
 const rimraf = require('rimraf');
 const { execSync, exec } = require('child_process');
+const config = require('../config/index')
+const { readFile, writeFile } = require('../utils/fileHelper')
 
 // 当前目录路径  
 const currentDirectory = process.cwd();
 
 
 
-
-const download = () => {
+// 下载仓库
+const downloadGitRespository = () => {
     return new Promise(async (resolve) => {
         try {
             // 仓库名称
@@ -37,7 +39,6 @@ const download = () => {
             // 下载
             console.log('Initializing git respository...');
             const cmd = `git clone http://git.minrow.com/adsdesk/adsdesk-fe/${respositoryName}.git`
-
             exec(cmd, (error, stdout, stderr) => {
                 if (error) {
                     throw new Error(error)
@@ -51,12 +52,44 @@ const download = () => {
             console.log(error)
             process.exit()
         }
+    })
+}
 
+// 替换文件内容
+const replaceFileContent = (params) => {
+
+    const fileExec = (fileName, filePath, searchValue, replaceValue) => {
+        // 读取文件
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                console.error('读取文件出错:', err);
+                return;
+            }
+            // 替换内容
+            const replaceContent = data.replace(searchValue, replaceValue)
+            // 写入文件
+            fs.writeFile(filePath, replaceContent, 'utf8', (err) => {
+                if (err) {
+                    console.error('写入文件出错:', err);
+                    return;
+                }
+                console.log(`文件${fileName}内容已成功修改`);
+            });
+
+        });
+    }
+
+    Object.keys(config.files).forEach(key => {
+        config.files[key].forEach(item => {
+            const { fileName, filePath } = item
+            const fullPath = path.join(currentDirectory, filePath)
+            fileExec(fileName, fullPath, key, params[key])
+        })
     })
 }
 
 module.exports = () => {
-    // 初始化问题
+    // 问题
     var config_question = [
         {
             type: 'list',
@@ -110,23 +143,12 @@ module.exports = () => {
     ];
 
     // 提示用户回答问题
-    inquirer.prompt(config_question).then(config_answers => {
-        // 下载
-        download().then(res => {
-            console.log('download finished', res)
+    inquirer.prompt(config_question).then(answers => {
+        downloadGitRespository().then(res => {
+            if (res) {
+                replaceFileContent(answers)
+            }
         })
-        // if (download_res) {
-        //     inquirer.prompt(install_question).then(install_answers => {
-        //         console.log(install_answers)
-        //     })
-        // }
-
-        // const currentPath = process.cwd();
-        // console.log(`当前路径：${currentPath}`);
-
-
-
-
     });
 
 
