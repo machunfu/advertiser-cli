@@ -96,9 +96,8 @@ module.exports = () => {
             name: 'template',
             message: '请选择一个模板?',
             choices: [
-                'toutiao-app',
-                'kuaishou-app',
-                'gdt-app'
+                '创编模板',
+                '报表模板'
             ]
         },
         {
